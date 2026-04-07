@@ -1,6 +1,6 @@
 # 📘 Claude Code Switch GLM - AI Unlocked
 
-## คู่มือติดตั้งสำหรับ Mac
+## คู่มือติดตั้งสำหรับ Mac / Windows
 
 ---
 
@@ -20,13 +20,14 @@
 
 ---
 
-ไฟล์ config นี้ช่วยให้คุณสลับใช้งาน Claude Code ได้ 3 โหมด:
+ไฟล์ config นี้ช่วยให้คุณสลับใช้งาน Claude Code ได้ 4 โหมด:
 
 | โหมด | คำอธิบาย |
 |------|----------|
 | 🟢 **GLM** | ใช้ GLM ผ่าน proxy API |
 | 🔵 **Subscription** | ใช้ Claude แท้ผ่าน Max Plan |
 | 🟣 **API** | ใช้ Claude แท้ผ่าน API Key |
+| 🟠 **Ollama** | ใช้ model local ผ่าน Ollama |
 
 ---
 
@@ -35,7 +36,8 @@
 ```
 claude-code-switch-glm-ai-unlocked/
 ├── README.md                              ← คู่มือนี้
-└── claude-code-switch-glm-ai-unlocked.sh  ← ไฟล์ config
+├── claude-code-switch-glm-ai-unlocked.sh  ← ไฟล์ config (Mac/Linux)
+└── claude-code-switch-glm-ai-unlocked.ps1 ← ไฟล์ config (Windows PowerShell)
 ```
 
 ---
@@ -90,6 +92,23 @@ export ANTHROPIC_API_KEY="sk-ant-api03-xxxxx..."
 
 ---
 
+### 🟠 สำหรับ Ollama (Local)
+
+ไม่ต้องแก้ไข key ใดๆ! แค่ต้อง:
+1. ติดตั้ง Ollama: https://ollama.com
+2. Pull model ที่ต้องการ:
+   ```bash
+   ollama pull gemma4:e4b
+   ```
+3. ตรวจสอบว่า Ollama กำลังรันอยู่:
+   ```bash
+   ollama list
+   ```
+
+> **หมายเหตุ:** ค่า default model ในไฟล์ config คือ `gemma4:e4b` — ถ้าใช้ model อื่น ให้แก้ใน `ollama_on()` ฟังก์ชัน
+
+---
+
 ### 🔵 สำหรับ Claude Subscription
 
 ไม่ต้องตั้งค่าอะไร! ใช้ account ที่ login ไว้กับ Claude Code ได้เลย
@@ -140,6 +159,7 @@ source ~/.zshrc
 | `ccg` | 🟢 สลับเป็น GLM แล้วเปิด Claude |
 | `ccs` | 🔵 สลับเป็น Claude Subscription แล้วเปิด |
 | `cca` | 🟣 สลับเป็น Claude API แล้วเปิด |
+| `cco` | 🟠 สลับเป็น Ollama (Local) แล้วเปิด Claude |
 | `cc` | ⚪ เปิด Claude ด้วย config ปัจจุบัน |
 | `ccc` | 🔍 เช็คว่าตอนนี้ใช้ config อะไร |
 
@@ -154,6 +174,9 @@ ccs
 
 # ใช้ Claude API
 cca
+
+# ใช้ Ollama (Local)
+cco
 
 # เช็คสถานะ
 ccc
@@ -170,6 +193,9 @@ claude_sub
 
 # สลับเป็น API
 claude_api
+
+# สลับเป็น Ollama
+ollama_on
 
 # แล้วค่อยเปิด Claude เอง
 cc
@@ -216,6 +242,14 @@ source ~/.zshrc
 2. มี credit ใน account
 3. API Key ยังไม่ถูก revoke
 
+### ปัญหา: Ollama ใช้ไม่ได้
+
+ตรวจสอบว่า:
+1. Ollama กำลังรันอยู่ (`ollama list` ต้องแสดง model)
+2. Port 11434 ไม่ถูกใช้โดยโปรแกรมอื่น
+3. Model ที่ตั้งไว้ใน config ตรงกับที่ pull มา
+4. ทดสอบ: `curl http://localhost:11434` ต้องได้ response
+
 ### ปัญหา: ต้องการแก้ไข API Key ภายหลัง
 
 ```bash
@@ -243,6 +277,7 @@ source ~/.zshrc
 | GLM | `ANTHROPIC_AUTH_TOKEN` | จากเว็บ GLM provider |
 | Subscription | Login account | `claude login` |
 | API | `ANTHROPIC_API_KEY` | console.anthropic.com |
+| Ollama | Ollama + model | `ollama pull <model>` |
 
 ---
 
@@ -266,6 +301,65 @@ source ~/.zshrc
 
 ---
 
-*Claude Code Switch GLM - AI Unlocked v1.0*
+---
+
+## 🪟 คู่มือติดตั้งสำหรับ Windows (PowerShell)
+
+### ขั้นตอนที่ 1: ตั้งค่า API Keys
+
+เปิดไฟล์ `claude-code-switch-glm-ai-unlocked.ps1` ด้วย Notepad หรือ VS Code แล้วแก้ไข API Keys เหมือนกับ Mac (ดูด้านบน)
+
+### ขั้นตอนที่ 2: ติดตั้ง
+
+```powershell
+# 1. ตรวจสอบว่ามี PowerShell Profile หรือยัง
+Test-Path $PROFILE
+
+# 2. ถ้ายังไม่มี ให้สร้างก่อน
+New-Item -Path $PROFILE -Type File -Force
+
+# 3. เปิดไฟล์ .ps1 แก้ไข API Key ก่อน แล้ว append เข้า Profile
+Get-Content .\claude-code-switch-glm-ai-unlocked.ps1 | Add-Content $PROFILE
+
+# 4. โหลด config ใหม่
+. $PROFILE
+
+# 5. ทดสอบ
+ccc
+```
+
+### ขั้นตอนที่ 3: วิธีใช้งาน
+
+คำสั่งลัดเหมือนกับ Mac ทุกประการ:
+
+| คำสั่ง | ความหมาย |
+|--------|----------|
+| `ccg` | 🟢 สลับเป็น GLM แล้วเปิด Claude |
+| `ccs` | 🔵 สลับเป็น Claude Subscription แล้วเปิด |
+| `cca` | 🟣 สลับเป็น Claude API แล้วเปิด |
+| `cco` | 🟠 สลับเป็น Ollama (Local) แล้วเปิด Claude |
+| `cc` | ⚪ เปิด Claude ด้วย config ปัจจุบัน |
+| `ccc` | 🔍 เช็คว่าตอนนี้ใช้ config อะไร |
+
+### ⚠️ หมายเหตุสำหรับ Windows
+
+1. **ต้องอนุญาต Execution Policy** ถ้าเจอ error:
+   ```powershell
+   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+   ```
+
+2. **Profile อยู่ที่:**
+   ```
+   C:\Users\<ชื่อผู้ใช้>\Documents\PowerShell\Microsoft.PowerShell_profile.ps1
+   ```
+
+3. **แก้ไข API Key ภายหลัง:**
+   ```powershell
+   notepad $PROFILE
+   ```
+
+---
+
+*Claude Code Switch GLM - AI Unlocked v2.0*
 
 *Powered by AI UNLOCKED 🚀*

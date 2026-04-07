@@ -6,10 +6,11 @@
 # 📺 https://www.youtube.com/@AIUnlocked168
 # 📘 https://www.facebook.com/aiunlockedvip
 # ========================================
-# สลับใช้งาน Claude Code ได้ 3 โหมด:
+# สลับใช้งาน Claude Code ได้ 4 โหมด:
 # - GLM (ผ่าน proxy API)
 # - Claude Subscription (Max Plan)
 # - Claude API
+# - Ollama (Local)
 # ========================================
 
 # --- GLM Config ---
@@ -50,6 +51,19 @@ claude_api() {
   echo "✅ Switched to Claude API"
 }
 
+# --- Ollama Local Config ---
+ollama_on() {
+  export ANTHROPIC_BASE_URL="http://localhost:11434"
+  export ANTHROPIC_API_KEY=""
+  export ANTHROPIC_AUTH_TOKEN="ollama"
+  export ANTHROPIC_DEFAULT_HAIKU_MODEL="gemma4:e4b"
+  export ANTHROPIC_DEFAULT_SONNET_MODEL="gemma4:e4b"
+  export ANTHROPIC_DEFAULT_OPUS_MODEL="gemma4:e4b"
+  unset API_TIMEOUT_MS
+  unset CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC
+  echo "✅ Switched to Ollama (Local)"
+}
+
 # ========================================
 # Alias ลัดเรียกใช้งาน
 # ========================================
@@ -66,6 +80,9 @@ alias ccs='claude_sub && claude --dangerously-skip-permissions'
 # cca = สลับเป็น Claude API แล้วเปิด
 alias cca='claude_api && claude --dangerously-skip-permissions'
 
+# cco = สลับเป็น Ollama (Local) แล้วเปิด
+alias cco='ollama_on && claude --dangerously-skip-permissions'
+
 # ========================================
 # คำสั่งเช็คสถานะ
 # ========================================
@@ -73,7 +90,10 @@ alias cca='claude_api && claude --dangerously-skip-permissions'
 claude_status() {
   echo "🔍 Current Claude Config:"
   echo "----------------------------"
-  if [ -n "$ANTHROPIC_AUTH_TOKEN" ]; then
+  if [ "$ANTHROPIC_AUTH_TOKEN" = "ollama" ]; then
+    echo "Mode: Ollama (Local)"
+    echo "Base URL: $ANTHROPIC_BASE_URL"
+  elif [ -n "$ANTHROPIC_AUTH_TOKEN" ]; then
     echo "Mode: GLM"
     echo "Base URL: $ANTHROPIC_BASE_URL"
     echo "Sonnet Model: $ANTHROPIC_DEFAULT_SONNET_MODEL"
