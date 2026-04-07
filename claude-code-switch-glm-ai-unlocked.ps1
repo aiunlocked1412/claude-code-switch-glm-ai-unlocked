@@ -57,7 +57,7 @@ function ollama_on {
   $env:ANTHROPIC_API_KEY = ""
   $env:ANTHROPIC_AUTH_TOKEN = "ollama"
   $env:ANTHROPIC_DEFAULT_HAIKU_MODEL = "gemma4:e4b"
-  $env:ANTHROPIC_DEFAULT_SONNET_MODEL = "gemma4:e4b"
+  $env:ANTHROPIC_DEFAULT_SONNET_MODEL = "gemma4:e2b"
   $env:ANTHROPIC_DEFAULT_OPUS_MODEL = "gemma4:e4b"
   Remove-Item Env:API_TIMEOUT_MS -ErrorAction SilentlyContinue
   Remove-Item Env:CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC -ErrorAction SilentlyContinue
