@@ -70,6 +70,12 @@ export ANTHROPIC_AUTH_TOKEN="abc123xyz456..."
 
 📺 **ดูวิธีสมัครแบบละเอียด**: https://youtu.be/5W9felMfuVw
 
+> **🆕 Default model = `glm-5.2[1m]` (1M context)**
+> ไฟล์ config ตั้งค่า GLM ให้ใช้ `glm-5.2[1m]` พร้อม `CLAUDE_CODE_AUTO_COMPACT_WINDOW=1000000` เพื่อเปิด context 1 ล้าน token โดยอัตโนมัติ
+> - ถ้า Claude Code แจ้งว่าไม่มี model ที่มี suffix `[1m]` ให้อัปเดต Claude Code เป็นเวอร์ชันล่าสุดก่อน (`claude update`)
+> - GLM-5.2 เป็น premium model (เทียบเท่า Claude Opus) หักโควต้าแบบ 2–3 เท่า โปรดดูเงื่อนไขล่าสุดที่เอกสาร z.ai
+> - **เคยติดตั้งเวอร์ชันเก่า (5.1) ไว้แล้ว?** ดูวิธีอัพเดตที่ [how-to-update-5-2.md](how-to-update-5-2.md)
+
 ---
 
 ### 🟣 สำหรับ Claude API
@@ -360,6 +366,6 @@ ccc
 
 ---
 
-*Claude Code Switch GLM - AI Unlocked v2.0*
+*Claude Code Switch GLM - AI Unlocked v2.1 (GLM 5.2 · 1M context)*
 
 *Powered by AI UNLOCKED 🚀*
