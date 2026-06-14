@@ -19,9 +19,10 @@ function glm_on {
   $env:ANTHROPIC_BASE_URL = "https://api.z.ai/api/anthropic"
   $env:API_TIMEOUT_MS = "3000000"
   $env:CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC = "1"
+  $env:CLAUDE_CODE_AUTO_COMPACT_WINDOW = "1000000"
   $env:ANTHROPIC_DEFAULT_HAIKU_MODEL = "glm-4.5-air"
-  $env:ANTHROPIC_DEFAULT_SONNET_MODEL = "glm-5.1"
-  $env:ANTHROPIC_DEFAULT_OPUS_MODEL = "glm-5.1"
+  $env:ANTHROPIC_DEFAULT_SONNET_MODEL = "glm-5.2[1m]"
+  $env:ANTHROPIC_DEFAULT_OPUS_MODEL = "glm-5.2[1m]"
   Remove-Item Env:ANTHROPIC_API_KEY -ErrorAction SilentlyContinue
   Write-Host "✅ Switched to GLM" -ForegroundColor Green
 }
@@ -36,6 +37,7 @@ function claude_sub {
   Remove-Item Env:ANTHROPIC_DEFAULT_SONNET_MODEL -ErrorAction SilentlyContinue
   Remove-Item Env:ANTHROPIC_DEFAULT_OPUS_MODEL -ErrorAction SilentlyContinue
   Remove-Item Env:CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC -ErrorAction SilentlyContinue
+  Remove-Item Env:CLAUDE_CODE_AUTO_COMPACT_WINDOW -ErrorAction SilentlyContinue
   Write-Host "✅ Switched to Claude Subscription" -ForegroundColor Cyan
 }
 
@@ -47,6 +49,7 @@ function claude_api {
   Remove-Item Env:ANTHROPIC_DEFAULT_SONNET_MODEL -ErrorAction SilentlyContinue
   Remove-Item Env:ANTHROPIC_DEFAULT_OPUS_MODEL -ErrorAction SilentlyContinue
   Remove-Item Env:CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC -ErrorAction SilentlyContinue
+  Remove-Item Env:CLAUDE_CODE_AUTO_COMPACT_WINDOW -ErrorAction SilentlyContinue
   $env:ANTHROPIC_API_KEY = "ใส่-ANTHROPIC-API-KEY-ของคุณ-ตรงนี้"
   Write-Host "✅ Switched to Claude API" -ForegroundColor Magenta
 }
@@ -61,6 +64,7 @@ function ollama_on {
   $env:ANTHROPIC_DEFAULT_OPUS_MODEL = "gemma4:e4b"
   Remove-Item Env:API_TIMEOUT_MS -ErrorAction SilentlyContinue
   Remove-Item Env:CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC -ErrorAction SilentlyContinue
+  Remove-Item Env:CLAUDE_CODE_AUTO_COMPACT_WINDOW -ErrorAction SilentlyContinue
   Write-Host "✅ Switched to Ollama (Local)" -ForegroundColor Yellow
 }
 

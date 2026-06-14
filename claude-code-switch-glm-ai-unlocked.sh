@@ -19,9 +19,10 @@ glm_on() {
   export ANTHROPIC_BASE_URL="https://api.z.ai/api/anthropic"
   export API_TIMEOUT_MS="3000000"
   export CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1
+  export CLAUDE_CODE_AUTO_COMPACT_WINDOW="1000000"
   export ANTHROPIC_DEFAULT_HAIKU_MODEL="glm-4.5-air"
-  export ANTHROPIC_DEFAULT_SONNET_MODEL="glm-5.1"
-  export ANTHROPIC_DEFAULT_OPUS_MODEL="glm-5.1"
+  export ANTHROPIC_DEFAULT_SONNET_MODEL="glm-5.2[1m]"
+  export ANTHROPIC_DEFAULT_OPUS_MODEL="glm-5.2[1m]"
   unset ANTHROPIC_API_KEY
   echo "✅ Switched to GLM"
 }
@@ -36,6 +37,7 @@ claude_sub() {
   unset ANTHROPIC_DEFAULT_SONNET_MODEL
   unset ANTHROPIC_DEFAULT_OPUS_MODEL
   unset CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC
+  unset CLAUDE_CODE_AUTO_COMPACT_WINDOW
   echo "✅ Switched to Claude Subscription"
 }
 
@@ -47,6 +49,7 @@ claude_api() {
   unset ANTHROPIC_DEFAULT_SONNET_MODEL
   unset ANTHROPIC_DEFAULT_OPUS_MODEL
   unset CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC
+  unset CLAUDE_CODE_AUTO_COMPACT_WINDOW
   export ANTHROPIC_API_KEY="ใส่-ANTHROPIC-API-KEY-ของคุณ-ตรงนี้"
   echo "✅ Switched to Claude API"
 }
@@ -61,6 +64,7 @@ ollama_on() {
   export ANTHROPIC_DEFAULT_OPUS_MODEL="gemma4:e4b"
   unset API_TIMEOUT_MS
   unset CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC
+  unset CLAUDE_CODE_AUTO_COMPACT_WINDOW
   echo "✅ Switched to Ollama (Local)"
 }
 
