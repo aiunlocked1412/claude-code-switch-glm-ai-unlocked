@@ -20,7 +20,7 @@
 
 ---
 
-ไฟล์ config นี้ช่วยให้คุณสลับใช้งาน Claude Code ได้ 4 โหมด:
+ไฟล์ config นี้ช่วยให้คุณสลับใช้งาน Claude Code ได้ 5 โหมด:
 
 | โหมด | คำอธิบาย |
 |------|----------|
@@ -28,6 +28,7 @@
 | 🔵 **Subscription** | ใช้ Claude แท้ผ่าน Max Plan |
 | 🟣 **API** | ใช้ Claude แท้ผ่าน API Key |
 | 🟠 **Ollama** | ใช้ model local ผ่าน Ollama |
+| 🔴 **SGLang** | ใช้ model local ผ่าน SGLang (เช่น Qwen3.8) |
 
 ---
 
@@ -116,6 +117,27 @@ export ANTHROPIC_API_KEY="sk-ant-api03-xxxxx..."
 
 ---
 
+### 🔴 สำหรับ SGLang (Local)
+
+ไม่ต้องแก้ไข key ใดๆ! แค่ต้องรัน SGLang server ไว้ที่ port `30000` เช่น:
+```bash
+python -m sglang.launch_server --model-path <model> --port 30000
+```
+
+ตรวจสอบว่ารันอยู่:
+```bash
+curl http://localhost:30000/v1/models
+```
+
+SGLang เสิร์ฟ Anthropic Messages API (`/v1/messages`) ให้ในตัว จึงต่อ Claude Code ได้ตรงๆ ไม่ต้องมี proxy แปลง
+
+> **หมายเหตุ:**
+> - ค่า default model ในไฟล์ config คือ `qwen3.8-27b` — ถ้าใช้ model อื่น ให้แก้ใน `sglang_on()` ฟังก์ชัน (ชื่อต้องตรงกับที่ `/v1/models` แสดง)
+> - `ccq` บังคับใช้ `--effort medium` เพราะถ้า effort เป็น `high` Claude Code จะส่ง `output_config.effort=high` แล้ว SGLang ตอบ `500 Internal server error`
+> - `CLAUDE_CODE_AUTO_COMPACT_WINDOW` ตั้งไว้ `120000` ให้ต่ำกว่า KV cache ของ server (ดูค่า `max_total_num_tokens` จาก `curl http://localhost:30000/get_server_info`)
+
+---
+
 ### 🔵 สำหรับ Claude Subscription
 
 ไม่ต้องตั้งค่าอะไร! ใช้ account ที่ login ไว้กับ Claude Code ได้เลย
@@ -167,6 +189,7 @@ source ~/.zshrc
 | `ccs` | 🔵 สลับเป็น Claude Subscription แล้วเปิด |
 | `cca` | 🟣 สลับเป็น Claude API แล้วเปิด |
 | `cco` | 🟠 สลับเป็น Ollama (Local) แล้วเปิด Claude |
+| `ccq` | 🔴 สลับเป็น SGLang (Local) แล้วเปิด Claude |
 | `cc` | ⚪ เปิด Claude ด้วย config ปัจจุบัน |
 | `ccc` | 🔍 เช็คว่าตอนนี้ใช้ config อะไร |
 
@@ -184,6 +207,9 @@ cca
 
 # ใช้ Ollama (Local)
 cco
+
+# ใช้ SGLang (Local / Qwen3.8)
+ccq
 
 # เช็คสถานะ
 ccc
@@ -203,6 +229,9 @@ claude_api
 
 # สลับเป็น Ollama
 ollama_on
+
+# สลับเป็น SGLang
+sglang_on
 
 # แล้วค่อยเปิด Claude เอง
 cc
@@ -257,6 +286,14 @@ source ~/.zshrc
 3. Model ที่ตั้งไว้ใน config ตรงกับที่ pull มา
 4. ทดสอบ: `curl http://localhost:11434` ต้องได้ response
 
+### ปัญหา: SGLang ใช้ไม่ได้
+
+ตรวจสอบว่า:
+1. SGLang server รันอยู่ (`curl http://localhost:30000/v1/models` ต้องได้ JSON)
+2. Port 30000 ไม่ถูกใช้โดยโปรแกรมอื่น
+3. ชื่อ model ใน `sglang_on()` ตรงกับที่ `/v1/models` แสดง
+4. ถ้าเจอ `API Error: 500` ให้เช็คว่าใช้ `--effort medium` อยู่ (effort `high` ทำให้ SGLang พัง)
+
 ### ปัญหา: ต้องการแก้ไข API Key ภายหลัง
 
 ```bash
@@ -285,6 +322,7 @@ source ~/.zshrc
 | Subscription | Login account | `claude login` |
 | API | `ANTHROPIC_API_KEY` | console.anthropic.com |
 | Ollama | Ollama + model | `ollama pull <model>` |
+| SGLang | SGLang server ที่ port 30000 | `sglang.launch_server --port 30000` |
 
 ---
 
@@ -345,6 +383,7 @@ ccc
 | `ccs` | 🔵 สลับเป็น Claude Subscription แล้วเปิด |
 | `cca` | 🟣 สลับเป็น Claude API แล้วเปิด |
 | `cco` | 🟠 สลับเป็น Ollama (Local) แล้วเปิด Claude |
+| `ccq` | 🔴 สลับเป็น SGLang (Local) แล้วเปิด Claude |
 | `cc` | ⚪ เปิด Claude ด้วย config ปัจจุบัน |
 | `ccc` | 🔍 เช็คว่าตอนนี้ใช้ config อะไร |
 

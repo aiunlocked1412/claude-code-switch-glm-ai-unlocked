@@ -6,11 +6,12 @@
 # https://www.youtube.com/@AIUnlocked168
 # https://www.facebook.com/aiunlockedvip
 # ========================================
-# สลับใช้งาน Claude Code ได้ 4 โหมด:
+# สลับใช้งาน Claude Code ได้ 5 โหมด:
 # - GLM (ผ่าน proxy API)
 # - Claude Subscription (Max Plan)
 # - Claude API
 # - Ollama (Local)
+# - SGLang (Local / Qwen3.8)
 # ========================================
 
 # --- GLM Config ---
@@ -68,6 +69,20 @@ function ollama_on {
   Write-Host "✅ Switched to Ollama (Local)" -ForegroundColor Yellow
 }
 
+# --- SGLang Local Config (Qwen3.8) ---
+function sglang_on {
+  $env:ANTHROPIC_BASE_URL = "http://localhost:30000"
+  $env:ANTHROPIC_AUTH_TOKEN = "sglang"
+  $env:API_TIMEOUT_MS = "3000000"
+  $env:CLAUDE_CODE_AUTO_COMPACT_WINDOW = "120000"
+  $env:ANTHROPIC_DEFAULT_HAIKU_MODEL = "qwen3.8-27b"
+  $env:ANTHROPIC_DEFAULT_SONNET_MODEL = "qwen3.8-27b"
+  $env:ANTHROPIC_DEFAULT_OPUS_MODEL = "qwen3.8-27b"
+  Remove-Item Env:ANTHROPIC_API_KEY -ErrorAction SilentlyContinue
+  Remove-Item Env:CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC -ErrorAction SilentlyContinue
+  Write-Host "✅ Switched to SGLang (Local)" -ForegroundColor Blue
+}
+
 # ========================================
 # Alias ลัดเรียกใช้งาน
 # ========================================
@@ -87,6 +102,10 @@ function cca { claude_api; claude --dangerously-skip-permissions @args }
 # cco = สลับเป็น Ollama (Local) แล้วเปิด
 function cco { ollama_on; claude --dangerously-skip-permissions @args }
 
+# ccq = สลับเป็น SGLang (Local / Qwen3.8) แล้วเปิด
+# ต้องใช้ --effort medium: ถ้า effort เป็น high เซิร์ฟเวอร์ SGLang จะตอบ 500
+function ccq { sglang_on; claude --effort medium --dangerously-skip-permissions @args }
+
 # ========================================
 # คำสั่งเช็คสถานะ
 # ========================================
@@ -97,6 +116,11 @@ function claude_status {
   if ($env:ANTHROPIC_AUTH_TOKEN -eq "ollama") {
     Write-Host "Mode: Ollama (Local)" -ForegroundColor Yellow
     Write-Host "Base URL: $env:ANTHROPIC_BASE_URL"
+    Write-Host "Sonnet Model: $env:ANTHROPIC_DEFAULT_SONNET_MODEL"
+  } elseif ($env:ANTHROPIC_AUTH_TOKEN -eq "sglang") {
+    Write-Host "Mode: SGLang (Local)" -ForegroundColor Blue
+    Write-Host "Base URL: $env:ANTHROPIC_BASE_URL"
+    Write-Host "Sonnet Model: $env:ANTHROPIC_DEFAULT_SONNET_MODEL"
   } elseif ($env:ANTHROPIC_AUTH_TOKEN) {
     Write-Host "Mode: GLM" -ForegroundColor Green
     Write-Host "Base URL: $env:ANTHROPIC_BASE_URL"

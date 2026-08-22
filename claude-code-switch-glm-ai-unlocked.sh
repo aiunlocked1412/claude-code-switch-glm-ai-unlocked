@@ -6,11 +6,12 @@
 # 📺 https://www.youtube.com/@AIUnlocked168
 # 📘 https://www.facebook.com/aiunlockedvip
 # ========================================
-# สลับใช้งาน Claude Code ได้ 4 โหมด:
+# สลับใช้งาน Claude Code ได้ 5 โหมด:
 # - GLM (ผ่าน proxy API)
 # - Claude Subscription (Max Plan)
 # - Claude API
 # - Ollama (Local)
+# - SGLang (Local / Qwen3.8)
 # ========================================
 
 # --- GLM Config ---
@@ -68,6 +69,20 @@ ollama_on() {
   echo "✅ Switched to Ollama (Local)"
 }
 
+# --- SGLang Local Config (Qwen3.8) ---
+sglang_on() {
+  export ANTHROPIC_BASE_URL="http://localhost:30000"
+  export ANTHROPIC_AUTH_TOKEN="sglang"
+  export API_TIMEOUT_MS="3000000"
+  export CLAUDE_CODE_AUTO_COMPACT_WINDOW="120000"
+  export ANTHROPIC_DEFAULT_HAIKU_MODEL="qwen3.8-27b"
+  export ANTHROPIC_DEFAULT_SONNET_MODEL="qwen3.8-27b"
+  export ANTHROPIC_DEFAULT_OPUS_MODEL="qwen3.8-27b"
+  unset ANTHROPIC_API_KEY
+  unset CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC
+  echo "✅ Switched to SGLang (Local)"
+}
+
 # ========================================
 # Alias ลัดเรียกใช้งาน
 # ========================================
@@ -87,6 +102,10 @@ alias cca='claude_api && claude --dangerously-skip-permissions'
 # cco = สลับเป็น Ollama (Local) แล้วเปิด
 alias cco='ollama_on && claude --dangerously-skip-permissions'
 
+# ccq = สลับเป็น SGLang (Local / Qwen3.8) แล้วเปิด
+# ต้องใช้ --effort medium: ถ้า effort เป็น high เซิร์ฟเวอร์ SGLang จะตอบ 500
+alias ccq='sglang_on && claude --effort medium --dangerously-skip-permissions'
+
 # ========================================
 # คำสั่งเช็คสถานะ
 # ========================================
@@ -97,6 +116,11 @@ claude_status() {
   if [ "$ANTHROPIC_AUTH_TOKEN" = "ollama" ]; then
     echo "Mode: Ollama (Local)"
     echo "Base URL: $ANTHROPIC_BASE_URL"
+    echo "Sonnet Model: $ANTHROPIC_DEFAULT_SONNET_MODEL"
+  elif [ "$ANTHROPIC_AUTH_TOKEN" = "sglang" ]; then
+    echo "Mode: SGLang (Local)"
+    echo "Base URL: $ANTHROPIC_BASE_URL"
+    echo "Sonnet Model: $ANTHROPIC_DEFAULT_SONNET_MODEL"
   elif [ -n "$ANTHROPIC_AUTH_TOKEN" ]; then
     echo "Mode: GLM"
     echo "Base URL: $ANTHROPIC_BASE_URL"
