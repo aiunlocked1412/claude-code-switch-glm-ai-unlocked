@@ -1,4 +1,4 @@
-# ========================================
+﻿# ========================================
 # Claude Code Switch GLM - AI Unlocked
 # ========================================
 # โดย AI UNLOCKED
@@ -21,8 +21,8 @@ function glm_on {
   $env:CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC = "1"
   $env:CLAUDE_CODE_AUTO_COMPACT_WINDOW = "1000000"
   $env:ANTHROPIC_DEFAULT_HAIKU_MODEL = "glm-4.5-air"
-  $env:ANTHROPIC_DEFAULT_SONNET_MODEL = "glm-5.2[1m]"
-  $env:ANTHROPIC_DEFAULT_OPUS_MODEL = "glm-5.2[1m]"
+  $env:ANTHROPIC_DEFAULT_SONNET_MODEL = "glm-5.3"
+  $env:ANTHROPIC_DEFAULT_OPUS_MODEL = "glm-5.3"
   Remove-Item Env:ANTHROPIC_API_KEY -ErrorAction SilentlyContinue
   Write-Host "✅ Switched to GLM" -ForegroundColor Green
 }
