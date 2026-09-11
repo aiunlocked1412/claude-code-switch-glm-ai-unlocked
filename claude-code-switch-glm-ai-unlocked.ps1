@@ -1,22 +1,32 @@
-﻿# ========================================
-# Claude Code Switch GLM - AI Unlocked
-# ========================================
-# โดย AI UNLOCKED
-# https://aiunlock.co/
-# https://www.youtube.com/@AIUnlocked168
-# https://www.facebook.com/aiunlockedvip
-# ========================================
-# สลับใช้งาน Claude Code ได้ 5 โหมด:
-# - GLM (ผ่าน proxy API)
-# - Claude Subscription (Max Plan)
-# - Claude API
-# - Ollama (Local)
-# - SGLang (Local / Qwen3.8)
-# ========================================
+# Claude Code Switch - AI Unlocked
+# โหมดที่รองรับ: Claude Subscription, GLM และ DGX (LM Studio)
 
-# --- GLM Config ---
+$script:ClaudeProviderVariables = @(
+  "ANTHROPIC_AUTH_TOKEN",
+  "ANTHROPIC_BASE_URL",
+  "ANTHROPIC_API_KEY",
+  "API_TIMEOUT_MS",
+  "ANTHROPIC_DEFAULT_HAIKU_MODEL",
+  "ANTHROPIC_DEFAULT_SONNET_MODEL",
+  "ANTHROPIC_DEFAULT_OPUS_MODEL",
+  "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC",
+  "CLAUDE_CODE_AUTO_COMPACT_WINDOW"
+)
+
+function Clear-ClaudeProviderEnv {
+  foreach ($name in $script:ClaudeProviderVariables) {
+    Remove-Item "Env:$name" -ErrorAction SilentlyContinue
+  }
+}
+
 function glm_on {
-  $env:ANTHROPIC_AUTH_TOKEN = "ใส่-GLM-TOKEN-ของคุณ-ตรงนี้"
+  Clear-ClaudeProviderEnv
+  $glmToken = [Environment]::GetEnvironmentVariable("AIUNLOCKED_GLM_TOKEN", "User")
+  if ([string]::IsNullOrWhiteSpace($glmToken)) {
+    throw "AIUNLOCKED_GLM_TOKEN is not configured in the User environment."
+  }
+
+  $env:ANTHROPIC_AUTH_TOKEN = $glmToken
   $env:ANTHROPIC_BASE_URL = "https://api.z.ai/api/anthropic"
   $env:API_TIMEOUT_MS = "3000000"
   $env:CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC = "1"
@@ -24,122 +34,77 @@ function glm_on {
   $env:ANTHROPIC_DEFAULT_HAIKU_MODEL = "glm-4.5-air"
   $env:ANTHROPIC_DEFAULT_SONNET_MODEL = "glm-5.3"
   $env:ANTHROPIC_DEFAULT_OPUS_MODEL = "glm-5.3"
-  Remove-Item Env:ANTHROPIC_API_KEY -ErrorAction SilentlyContinue
-  Write-Host "✅ Switched to GLM" -ForegroundColor Green
+  Write-Host "Switched to GLM" -ForegroundColor Green
 }
 
-# --- Claude Official (Subscription/Max Plan) ---
 function claude_sub {
-  Remove-Item Env:ANTHROPIC_AUTH_TOKEN -ErrorAction SilentlyContinue
-  Remove-Item Env:ANTHROPIC_BASE_URL -ErrorAction SilentlyContinue
-  Remove-Item Env:ANTHROPIC_API_KEY -ErrorAction SilentlyContinue
-  Remove-Item Env:API_TIMEOUT_MS -ErrorAction SilentlyContinue
-  Remove-Item Env:ANTHROPIC_DEFAULT_HAIKU_MODEL -ErrorAction SilentlyContinue
-  Remove-Item Env:ANTHROPIC_DEFAULT_SONNET_MODEL -ErrorAction SilentlyContinue
-  Remove-Item Env:ANTHROPIC_DEFAULT_OPUS_MODEL -ErrorAction SilentlyContinue
-  Remove-Item Env:CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC -ErrorAction SilentlyContinue
-  Remove-Item Env:CLAUDE_CODE_AUTO_COMPACT_WINDOW -ErrorAction SilentlyContinue
-  Write-Host "✅ Switched to Claude Subscription" -ForegroundColor Cyan
+  Clear-ClaudeProviderEnv
+  Write-Host "Switched to Claude Subscription" -ForegroundColor Cyan
 }
 
-# --- Claude API ---
-function claude_api {
-  Remove-Item Env:ANTHROPIC_AUTH_TOKEN -ErrorAction SilentlyContinue
-  Remove-Item Env:ANTHROPIC_BASE_URL -ErrorAction SilentlyContinue
-  Remove-Item Env:ANTHROPIC_DEFAULT_HAIKU_MODEL -ErrorAction SilentlyContinue
-  Remove-Item Env:ANTHROPIC_DEFAULT_SONNET_MODEL -ErrorAction SilentlyContinue
-  Remove-Item Env:ANTHROPIC_DEFAULT_OPUS_MODEL -ErrorAction SilentlyContinue
-  Remove-Item Env:CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC -ErrorAction SilentlyContinue
-  Remove-Item Env:CLAUDE_CODE_AUTO_COMPACT_WINDOW -ErrorAction SilentlyContinue
-  $env:ANTHROPIC_API_KEY = "ใส่-ANTHROPIC-API-KEY-ของคุณ-ตรงนี้"
-  Write-Host "✅ Switched to Claude API" -ForegroundColor Magenta
+function Ensure-DgxProxy {
+  $healthUrl = "http://127.0.0.1:18150/health"
+  try {
+    Invoke-RestMethod -Uri $healthUrl -TimeoutSec 1 | Out-Null
+    return
+  } catch {
+    $node = Get-Command node -ErrorAction Stop
+    $proxyScript = Join-Path $PSScriptRoot "dgx-anthropic-proxy.js"
+    Start-Process -FilePath $node.Source -ArgumentList @($proxyScript) -WindowStyle Hidden
+  }
+
+  foreach ($attempt in 1..20) {
+    Start-Sleep -Milliseconds 250
+    try {
+      Invoke-RestMethod -Uri $healthUrl -TimeoutSec 1 | Out-Null
+      return
+    } catch {
+      if ($attempt -eq 20) {
+        throw "DGX compatibility proxy failed to start."
+      }
+    }
+  }
 }
 
-# --- Ollama Local Config ---
-function ollama_on {
-  $env:ANTHROPIC_BASE_URL = "http://localhost:11434"
-  $env:ANTHROPIC_API_KEY = ""
-  $env:ANTHROPIC_AUTH_TOKEN = "ollama"
-  $env:ANTHROPIC_DEFAULT_HAIKU_MODEL = "gemma4:e4b"
-  $env:ANTHROPIC_DEFAULT_SONNET_MODEL = "gemma4:e2b"
-  $env:ANTHROPIC_DEFAULT_OPUS_MODEL = "gemma4:e4b"
-  Remove-Item Env:API_TIMEOUT_MS -ErrorAction SilentlyContinue
-  Remove-Item Env:CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC -ErrorAction SilentlyContinue
-  Remove-Item Env:CLAUDE_CODE_AUTO_COMPACT_WINDOW -ErrorAction SilentlyContinue
-  Write-Host "✅ Switched to Ollama (Local)" -ForegroundColor Yellow
-}
-
-# --- SGLang Local Config (Qwen3.8) ---
-function sglang_on {
-  $env:ANTHROPIC_BASE_URL = "http://localhost:30000"
-  $env:ANTHROPIC_AUTH_TOKEN = "sglang"
+function dgx_on {
+  Clear-ClaudeProviderEnv
+  Ensure-DgxProxy
+  $env:ANTHROPIC_AUTH_TOKEN = "lm-studio"
+  $env:ANTHROPIC_BASE_URL = "http://127.0.0.1:18150"
   $env:API_TIMEOUT_MS = "3000000"
-  $env:CLAUDE_CODE_AUTO_COMPACT_WINDOW = "120000"
-  $env:ANTHROPIC_DEFAULT_HAIKU_MODEL = "qwen3.8-27b"
-  $env:ANTHROPIC_DEFAULT_SONNET_MODEL = "qwen3.8-27b"
-  $env:ANTHROPIC_DEFAULT_OPUS_MODEL = "qwen3.8-27b"
-  Remove-Item Env:ANTHROPIC_API_KEY -ErrorAction SilentlyContinue
-  Remove-Item Env:CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC -ErrorAction SilentlyContinue
-  Write-Host "✅ Switched to SGLang (Local)" -ForegroundColor Blue
+  $env:CLAUDE_CODE_AUTO_COMPACT_WINDOW = "200000"
+  $env:ANTHROPIC_DEFAULT_HAIKU_MODEL = "qwen3.8-27b-uncensored"
+  $env:ANTHROPIC_DEFAULT_SONNET_MODEL = "openthai2.0-qwen3.8-27b"
+  $env:ANTHROPIC_DEFAULT_OPUS_MODEL = "qwen3.8-flash-next@iq4_xs"
+  Write-Host "Switched to DGX (LM Studio)" -ForegroundColor Yellow
 }
 
-# ========================================
-# Alias ลัดเรียกใช้งาน
-# ========================================
+@("claude_api", "ollama_on", "sglang_on", "cca", "cco", "ccq") | ForEach-Object {
+  Remove-Item "Function:$_" -ErrorAction SilentlyContinue
+}
 
-# cc  = Claude ปกติ + skip permissions
-function cc { claude --dangerously-skip-permissions @args }
-
-# ccg = สลับเป็น GLM แล้วเปิด Claude
+function cc  { claude --dangerously-skip-permissions @args }
 function ccg { glm_on; claude --dangerously-skip-permissions @args }
-
-# ccs = สลับเป็น Claude Subscription แล้วเปิด
 function ccs { claude_sub; claude --dangerously-skip-permissions @args }
-
-# cca = สลับเป็น Claude API แล้วเปิด
-function cca { claude_api; claude --dangerously-skip-permissions @args }
-
-# cco = สลับเป็น Ollama (Local) แล้วเปิด
-function cco { ollama_on; claude --dangerously-skip-permissions @args }
-
-# ccq = สลับเป็น SGLang (Local / Qwen3.8) แล้วเปิด
-# ต้องใช้ --effort medium: ถ้า effort เป็น high เซิร์ฟเวอร์ SGLang จะตอบ 500
-function ccq { sglang_on; claude --effort medium --dangerously-skip-permissions @args }
-
-# ========================================
-# คำสั่งเช็คสถานะ
-# ========================================
+function ccd { dgx_on; claude --dangerously-skip-permissions @args }
 
 function claude_status {
-  Write-Host "🔍 Current Claude Config:" -ForegroundColor White
+  Write-Host "Current Claude Config" -ForegroundColor White
   Write-Host "----------------------------"
-  if ($env:ANTHROPIC_AUTH_TOKEN -eq "ollama") {
-    Write-Host "Mode: Ollama (Local)" -ForegroundColor Yellow
-    Write-Host "Base URL: $env:ANTHROPIC_BASE_URL"
-    Write-Host "Sonnet Model: $env:ANTHROPIC_DEFAULT_SONNET_MODEL"
-  } elseif ($env:ANTHROPIC_AUTH_TOKEN -eq "sglang") {
-    Write-Host "Mode: SGLang (Local)" -ForegroundColor Blue
-    Write-Host "Base URL: $env:ANTHROPIC_BASE_URL"
-    Write-Host "Sonnet Model: $env:ANTHROPIC_DEFAULT_SONNET_MODEL"
-  } elseif ($env:ANTHROPIC_AUTH_TOKEN) {
+  if ($env:ANTHROPIC_BASE_URL -eq "http://127.0.0.1:18150") {
+    Write-Host "Mode: DGX (LM Studio)" -ForegroundColor Yellow
+    Write-Host "DGX: http://192.168.1.150:8080"
+    Write-Host "Haiku:  $env:ANTHROPIC_DEFAULT_HAIKU_MODEL"
+    Write-Host "Sonnet: $env:ANTHROPIC_DEFAULT_SONNET_MODEL"
+    Write-Host "Opus:   $env:ANTHROPIC_DEFAULT_OPUS_MODEL"
+  } elseif ($env:ANTHROPIC_BASE_URL -eq "https://api.z.ai/api/anthropic") {
     Write-Host "Mode: GLM" -ForegroundColor Green
     Write-Host "Base URL: $env:ANTHROPIC_BASE_URL"
-    Write-Host "Sonnet Model: $env:ANTHROPIC_DEFAULT_SONNET_MODEL"
-  } elseif ($env:ANTHROPIC_API_KEY) {
-    Write-Host "Mode: Claude API" -ForegroundColor Magenta
-    Write-Host "API Key: $($env:ANTHROPIC_API_KEY.Substring(0,15))..."
+    Write-Host "Sonnet: $env:ANTHROPIC_DEFAULT_SONNET_MODEL"
   } else {
     Write-Host "Mode: Claude Subscription" -ForegroundColor Cyan
   }
   Write-Host "----------------------------"
-  Write-Host "🚀 Powered by AI UNLOCKED" -ForegroundColor White
 }
 
 function ccc { claude_status }
-
-# ========================================
-# 🚀 Powered by AI UNLOCKED
-# https://aiunlock.co/
-# https://www.youtube.com/@AIUnlocked168
-# https://www.facebook.com/aiunlockedvip
-# ========================================
