@@ -96,7 +96,8 @@ function dgx_on {
   param(
     [ValidateSet("qwen", "glm", "deepseek")]
     [string]$Target,
-    [switch]$Switch
+    [switch]$Switch,
+    [switch]$Thinking
   )
 
   $served = Get-DgxSparkModel
@@ -122,8 +123,12 @@ function dgx_on {
   $known = if ($servedTarget) { $script:DgxSparkModels[$servedTarget] } else { $null }
 
   Clear-ClaudeProviderEnv
+  # ผ่าน proxy ไม่ได้ยิงตรง: thinking mode ของ Qwen3 เปิดอยู่เป็นค่าเริ่มต้น และ
+  # Anthropic API ไม่มีช่องให้ปิด ตัว proxy จึงใส่ chat_template_kwargs ให้
+  # -Thinking เมื่อเป็นงานที่คุ้มจะให้มันคิดก่อนตอบ
+  Ensure-AnthropicProxy -Port 18151 -Upstream $script:DgxSparkBaseUrl -Thinking:$Thinking
   $env:ANTHROPIC_AUTH_TOKEN = "dgx"
-  $env:ANTHROPIC_BASE_URL = $script:DgxSparkBaseUrl
+  $env:ANTHROPIC_BASE_URL = "http://127.0.0.1:18151"
   $env:API_TIMEOUT_MS = "3000000"
   $env:CLAUDE_CODE_AUTO_COMPACT_WINDOW = if ($known) { $known.CompactWindow } else { "200000" }
   $env:ANTHROPIC_DEFAULT_HAIKU_MODEL = $served
@@ -139,16 +144,30 @@ function dgx_on {
 # message รวมไว้ที่เดียว)
 # ---------------------------------------------------------------------------
 
-function Ensure-LmStudioProxy {
-  $healthUrl = "http://127.0.0.1:18150/health"
+function Ensure-AnthropicProxy {
+  # หนึ่ง instance ต่อหนึ่ง upstream แยกพอร์ตกัน ตัว proxy อ่านค่าจาก env
+  # ตอนสตาร์ต จึงต้องเช็กว่าตัวที่รันอยู่ชี้ไป upstream เดียวกันจริง
+  param(
+    [Parameter(Mandatory)][int]$Port,
+    [Parameter(Mandatory)][string]$Upstream,
+    [switch]$Thinking
+  )
+
+  $healthUrl = "http://127.0.0.1:$Port/health"
   try {
-    Invoke-RestMethod -Uri $healthUrl -TimeoutSec 1 | Out-Null
-    return
-  } catch {
-    $node = Get-Command node -ErrorAction Stop
-    $proxyScript = Join-Path $PSScriptRoot "dgx-anthropic-proxy.js"
-    Start-Process -FilePath $node.Source -ArgumentList @($proxyScript) -WindowStyle Hidden
+    $health = Invoke-RestMethod -Uri $healthUrl -TimeoutSec 1
+    if ($health.upstream -eq $Upstream -and [bool]$health.thinking -eq [bool]$Thinking) { return }
+    throw "proxy on $Port points at $($health.upstream) (thinking=$($health.thinking)); restart it"
+  } catch [System.Net.WebException] {
+  } catch [System.Net.Http.HttpRequestException] {
   }
+
+  $node = Get-Command node -ErrorAction Stop
+  $proxyScript = Join-Path $PSScriptRoot "dgx-anthropic-proxy.js"
+  $env:DGX_PROXY_PORT = "$Port"
+  $env:DGX_PROXY_UPSTREAM = $Upstream
+  $env:DGX_THINKING = if ($Thinking) { "1" } else { "0" }
+  Start-Process -FilePath $node.Source -ArgumentList @($proxyScript) -WindowStyle Hidden
 
   foreach ($attempt in 1..20) {
     Start-Sleep -Milliseconds 250
@@ -157,10 +176,14 @@ function Ensure-LmStudioProxy {
       return
     } catch {
       if ($attempt -eq 20) {
-        throw "LM Studio compatibility proxy failed to start."
+        throw "compatibility proxy on port $Port failed to start."
       }
     }
   }
+}
+
+function Ensure-LmStudioProxy {
+  Ensure-AnthropicProxy -Port 18150 -Upstream "http://192.168.1.150:8080"
 }
 
 function lmstudio_on {
@@ -196,13 +219,16 @@ function ccl  { lmstudio_on; claude --dangerously-skip-permissions @args }
 
 # ลัดไปที่โมเดลใดโมเดลหนึ่งบน DGX Spark โดยตรง จะไม่สั่งสลับเองถ้าเสิร์ฟอยู่คนละตัว
 function ccdq { dgx_on -Target qwen;     claude --dangerously-skip-permissions @args }
+
+# เหมือน ccdq แต่เปิด thinking ไว้ ช้ากว่ามาก ใช้กับงานที่ต้องคิดจริง ๆ
+function ccdqt { dgx_on -Target qwen -Thinking; claude --dangerously-skip-permissions @args }
 function ccdg { dgx_on -Target glm;      claude --dangerously-skip-permissions @args }
 function ccdd { dgx_on -Target deepseek; claude --dangerously-skip-permissions @args }
 
 function claude_status {
   Write-Host "Current Claude Config" -ForegroundColor White
   Write-Host "----------------------------"
-  if ($env:ANTHROPIC_BASE_URL -eq $script:DgxSparkBaseUrl) {
+  if ($env:ANTHROPIC_BASE_URL -eq "http://127.0.0.1:18151") {
     $served = Get-DgxSparkModel
     $target = Get-DgxSparkTarget -ModelId $served
     $label = if ($target) { $script:DgxSparkModels[$target].Label } else { "unknown" }
